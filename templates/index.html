@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Paper Summarizer</title>
+    <title>Article Summarizer</title>
     {{ dropzone.load_css() }}
     <style>
         body {
@@ -48,11 +48,14 @@
     </style>
 </head>
 <body>
-    <h1>PDF Summarizer</h1>
+    <h1>Article Summarizer</h1>
+    <p> Drag a PDF into the box below to get started:</p>
     {{ dropzone.create(action=url_for('index')) }}
     
-    <div id="extendedSummary" class="summary"></div>
     <div id="shortSummary" class="summary"></div>
+    <div id="extendedSummary" class="summary"></div>
+    <div id="methodsDiscussion" class="summary"></div>
+    <div id="theoryDiscussion" class="summary"></div>
 
     {{ dropzone.load_js() }}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -60,8 +63,10 @@
         Dropzone.options.myDropzone = {
             init: function() {
                 this.on("success", function(file, response) {
-                    $('#extendedSummary').html('<h2>Extended Summary:</h2>' + response.extended_summary);
                     $('#shortSummary').html('<h2>Short Summary:</h2>' + response.short_summary);
+                    $('#extendedSummary').html('<h2>Extended Summary:</h2>' + response.extended_summary);
+                    $('#methodsDiscussion').html('<h2>Methods and Data:</h2>' + response.methods_discussion);
+                    $('#theoryDiscussion').html('<h2>Theoretical Framework and Contribution:</h2>' + response.theory_discussion);
                     
                     // Remove all files from the dropzone
                     this.removeAllFiles();

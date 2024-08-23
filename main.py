@@ -46,35 +46,49 @@ def process_pdf(file_path):
         for page in reader.pages:
             text += page.extract_text()
 
-    # Generate summaries using GPT-4
-    extended_summary = generate_summary(text, "extended")
-    short_summary = generate_summary(text, "short")
+    # Generate all summaries using the new function
+    summaries = generate_summaries(text)
 
     # Clean up: delete the uploaded file
     os.remove(file_path)
 
-    # Format summaries for HTML display
-    extended_summary = format_summary(extended_summary)
-    short_summary = format_summary(short_summary)
+    return jsonify(summaries)
 
-    return jsonify({
-        'extended_summary': extended_summary,
-        'short_summary': short_summary
-    })
 
-def generate_summary(text, summary_type):
-    prompt = f"Summarize the following academic paper. "
-    if summary_type == "extended":
-        prompt += "Provide an extended summary:"
-    else:
-        prompt += "Provide a 2-sentence summary:"
+def generate_summaries(text):
+    messages = [
+        {"role": "system", "content": "You are an AI assistant specialized in succinct summaries of academic papers. Your task is to provide a series of summaries and discussions about a paper, building upon previous information without redundancy."},
+        {"role": "user", "content": "I will provide you with an academic paper. Please read it carefully and await further instructions for specific summaries and discussions."},
+        {"role": "user", "content": text},
+        {"role": "assistant", "content": "I have carefully read the academic paper and am ready for your specific requests."}
+    ]
 
-    response = client.chat.completions.create(model="gpt-4o",
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant that summarizes academic papers."},
-        {"role": "user", "content": prompt + "\n\n" + text}
-    ])
-    return response.choices[0].message.content.strip()
+    def get_summary(prompt):
+        messages.append({"role": "user", "content": prompt})
+        response = client.chat.completions.create(
+            model=app.config['OPENAI_MODEL'],
+            messages=messages
+        )
+        content = response.choices[0].message.content.strip()
+        messages.append({"role": "assistant", "content": content})
+        return content
+
+    summaries = {}
+
+    # Short summary
+    summaries['short_summary'] = get_summary("Provide a 2-sentence summary of the paper.")
+
+    # Extended summary
+    summaries['extended_summary'] = get_summary("Now, provide a 250 word extended summary of the paper. Build upon the short summary you just provided, adding more details and key points. Avoid repeating information you've already mentioned.")
+
+    # Methods discussion
+    summaries['methods_discussion'] = get_summary("Next, provide a 150 word summary of the methods and data used in this paper. Focus on aspects not already covered in the summaries. If you've already mentioned some methods, you can briefly refer to them but provide more depth or new information.")
+
+    # Theory discussion
+    summaries['theory_discussion'] = get_summary("Finally, provide a 200 word discussion of the theoretical framework and contribution of this paper. Highlight aspects not already covered in previous summaries and discussions. If you've touched on theoretical points before, expand on them without repeating the same information.")
+
+    return {key: format_summary(value) for key, value in summaries.items()}
+
 
 
 def format_summary(summary):
