@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Paper Summarizer</title>
+    {{ dropzone.load_css() }}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .dropzone {
+            border: 2px dashed #0087F7;
+            border-radius: 5px;
+            margin: 20px auto;
+            min-height: 150px !important;
+            width: 50%;
+        }
+        .summary {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .summary-content {
+            margin-top: 10px;
+        }
+        .summary-content p {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .summary-content h1, .summary-content h2, .summary-content h3 {
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        .summary-content ul, .summary-content ol {
+            margin-left: 20px;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Summarizer</h1>
+    {{ dropzone.create(action=url_for('index')) }}
+    
+    <div id="extendedSummary" class="summary"></div>
+    <div id="shortSummary" class="summary"></div>
+
+    {{ dropzone.load_js() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        Dropzone.options.myDropzone = {
+            init: function() {
+                this.on("success", function(file, response) {
+                    $('#extendedSummary').html('<h2>Extended Summary:</h2>' + response.extended_summary);
+                    $('#shortSummary').html('<h2>Short Summary:</h2>' + response.short_summary);
+                    
+                    // Remove all files from the dropzone
+                    this.removeAllFiles();
+                });
+            }
+        };
+    </script>
+</body>
+</html>
