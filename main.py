@@ -30,15 +30,16 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def index():
     if request.method == 'POST':
         f = request.files.get('file')
+        model = request.form.get('model', 'gpt-4o-mini')  # Default to gpt-4o-mini if not specified
         if f:
             filename = secure_filename(f.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             f.save(file_path)
-            return process_pdf(file_path)
+            return process_pdf(file_path, model)
     return render_template('index.html')
 
 
-def process_pdf(file_path):
+def process_pdf(file_path, model):
     # Extract text from PDF
     with open(file_path, 'rb') as file:
         reader = PyPDF2.PdfReader(file)
@@ -46,8 +47,8 @@ def process_pdf(file_path):
         for page in reader.pages:
             text += page.extract_text()
 
-    # Generate all summaries using the new function
-    summaries = generate_summaries(text)
+    # Generate all summaries using the new function with the specified model
+    summaries = generate_summaries(text, model)
 
     # Clean up: delete the uploaded file
     os.remove(file_path)
@@ -55,7 +56,7 @@ def process_pdf(file_path):
     return jsonify(summaries)
 
 
-def generate_summaries(text):
+def generate_summaries(text, model):
     messages = [
         {"role": "system", "content": "You are an AI assistant specialized in succinct summaries of academic papers. Your task is to provide a series of summaries and discussions about a paper, building upon previous information without redundancy."},
         {"role": "user", "content": "I will provide you with an academic paper. Please read it carefully and await further instructions for specific summaries and discussions."},
@@ -66,13 +67,13 @@ def generate_summaries(text):
     def get_summary(prompt):
         messages.append({"role": "user", "content": prompt})
         response = client.chat.completions.create(
-            model=app.config['OPENAI_MODEL'],
+            model=model,
             messages=messages
         )
         content = response.choices[0].message.content.strip()
         messages.append({"role": "assistant", "content": content})
         return content
-
+    
     summaries = {}
 
     # Short summary
@@ -88,7 +89,6 @@ def generate_summaries(text):
     summaries['theory_discussion'] = get_summary("Finally, provide a 200 word discussion of the theoretical framework and contribution of this paper. Highlight aspects not already covered in previous summaries and discussions. If you've touched on theoretical points before, expand on them without repeating the same information.")
 
     return {key: format_summary(value) for key, value in summaries.items()}
-
 
 
 def format_summary(summary):

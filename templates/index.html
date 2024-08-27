@@ -1,78 +1,248 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Article Summarizer</title>
     {{ dropzone.load_css() }}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --background-color: #1a1a1a;
+            --container-bg: #2a2a2a;
+            --text-color: #e0e0e0;
+            --border-color: #3a3a3a;
+            --primary-color: #4a90e2;
+            --hover-color: #3a7bc8;
+            --summary-bg: #333333;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
+            background-color: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
         }
+
         h1 {
             text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 700;
         }
+
+        .model-select-container {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        #modelSelect {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--summary-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 200px;
+        }
+
+        #modelSelect:hover, #modelSelect:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .model-select-container::after {
+            content: '\25BC';
+            position: absolute;
+            top: 50%;
+            right: calc(50% - 90px);
+            transform: translateY(-50%);
+            color: var(--primary-color);
+            pointer-events: none;
+        }
+
         .dropzone {
-            border: 2px dashed #0087F7;
-            border-radius: 5px;
-            margin: 20px auto;
+            border: 2px dashed var(--border-color) !important;
+            border-radius: 8px;
+            background: var(--summary-bg) !important;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             min-height: 150px !important;
-            width: 50%;
         }
+
+        .dropzone:hover, .dropzone.dz-drag-hover {
+            border-color: var(--primary-color) !important;
+        }
+
+        .dropzone .dz-message {
+            color: var(--text-color) !important;
+            font-size: 1.2em;
+        }
+
+        .dropzone .dz-message::before {
+            content: '\f093';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            font-size: 2em;
+            display: block;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
         .summary {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            position: relative;
+            background-color: var(--summary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
+
+        .summary:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .summary h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-right: 60px;
+        }
+
         .summary-content {
-            margin-top: 10px;
+            color: var(--text-color);
+            font-size: 1.1em;
+            line-height: 1.8;
         }
-        .summary-content p {
-            margin-top: 0;
-            margin-bottom: 10px;
+
+        .copy-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        .summary-content h1, .summary-content h2, .summary-content h3 {
-            margin-top: 15px;
-            margin-bottom: 10px;
+
+        .copy-btn:hover {
+            background-color: var(--hover-color);
         }
-        .summary-content ul, .summary-content ol {
-            margin-left: 20px;
-            margin-top: 0;
-            margin-bottom: 10px;
+
+        .copy-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.5);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .summary h2 {
+                font-size: 1.2em;
+            }
+
+            .summary-content {
+                font-size: 1em;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Article Summarizer</h1>
-    <p> Drag a PDF into the box below to get started:</p>
-    {{ dropzone.create(action=url_for('index')) }}
-    
-    <div id="shortSummary" class="summary"></div>
-    <div id="extendedSummary" class="summary"></div>
-    <div id="methodsDiscussion" class="summary"></div>
-    <div id="theoryDiscussion" class="summary"></div>
+    <div class="container">
+        <h1>Article Summarizer</h1>
+        
+        <div class="model-select-container">
+            <select id="modelSelect">
+                <option value="gpt-4o-mini">GPT-4o-mini</option>
+                <option value="gpt-4o">GPT-4o</option>
+            </select>
+        </div>
+
+        {{ dropzone.create(action=url_for('index')) }}
+        
+        <div id="shortSummary" class="summary"></div>
+        <div id="extendedSummary" class="summary"></div>
+        <div id="methodsDiscussion" class="summary"></div>
+        <div id="theoryDiscussion" class="summary"></div>
+    </div>
 
     {{ dropzone.load_js() }}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
         Dropzone.options.myDropzone = {
             init: function() {
+                this.on("sending", function(file, xhr, formData) {
+                    formData.append("model", $("#modelSelect").val());
+                });
+
                 this.on("success", function(file, response) {
-                    $('#shortSummary').html('<h2>Short Summary:</h2>' + response.short_summary);
-                    $('#extendedSummary').html('<h2>Extended Summary:</h2>' + response.extended_summary);
-                    $('#methodsDiscussion').html('<h2>Methods and Data:</h2>' + response.methods_discussion);
-                    $('#theoryDiscussion').html('<h2>Theoretical Framework and Contribution:</h2>' + response.theory_discussion);
+                    function createSummaryHTML(title, content, id) {
+                        return `<h2>${title}</h2>
+                                <div class="summary-content">${content}</div>
+                                <button class="copy-btn" onclick="copyToClipboard('${id}')">Copy</button>`;
+                    }
+
+                    $('#shortSummary').html(createSummaryHTML('Short Summary', response.short_summary, 'shortSummary'));
+                    $('#extendedSummary').html(createSummaryHTML('Extended Summary', response.extended_summary, 'extendedSummary'));
+                    $('#methodsDiscussion').html(createSummaryHTML('Methods and Data', response.methods_discussion, 'methodsDiscussion'));
+                    $('#theoryDiscussion').html(createSummaryHTML('Theoretical Framework and Contribution', response.theory_discussion, 'theoryDiscussion'));
                     
-                    // Remove all files from the dropzone
                     this.removeAllFiles();
                 });
             }
         };
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const content = element.querySelector('.summary-content').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                const copyBtn = element.querySelector('.copy-btn');
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
     </script>
 </body>
 </html>
