@@ -2,6 +2,10 @@
 
 Flask app that uses the OpenAI API to generate quick summaries of academic articles using GPT without manually prompting ChatGPT repeatedly. By default, this app uses the GPT-4o-mini LLM, which is very cheap to use (probably less than $0.01 per summary).
 
+To see how the app works, check out our demo video:
+
+[![Demo Video](https://i3.ytimg.com/vi/RNvlYjW_OLw/hqdefault.jpg)](https://youtu.be/RNvlYjW_OLw)
+
 ## Setup
 
 1. Clone the repository:
