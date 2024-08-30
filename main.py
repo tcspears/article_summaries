@@ -1,6 +1,8 @@
 # Flask backend (app.py)
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, redirect, url_for, flash
 from flask_dropzone import Dropzone
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from werkzeug.utils import secure_filename
 import PyPDF2
@@ -8,6 +10,7 @@ from openai import OpenAI
 import yaml
 from markupsafe import escape, Markup
 import markdown
+import sqlite3
 
 def load_config(app, config_file='settings.yaml'):
     with open(config_file, 'r') as file:
@@ -15,18 +18,116 @@ def load_config(app, config_file='settings.yaml'):
     app.config.update(config)
 
 app = Flask(__name__)
+app.secret_key = app.config.get('SECRET_KEY', 'fallback_secret_key')
 load_config(app)
 dropzone = Dropzone(app)
 
 client = OpenAI(api_key=app.config['OPENAI_API_KEY'])
 
-# Ensure upload folder exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Set up LoginManager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-# Set up OpenAI API (replace with your actual API key)
+# User model
+class User(UserMixin):
+    def __init__(self, id, username, password, is_admin):
+        self.id = id
+        self.username = username
+        self.password = password
+        self.is_admin = is_admin
 
+# Database setup
+def init_db():
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  username TEXT UNIQUE NOT NULL,
+                  password TEXT NOT NULL,
+                  is_admin BOOLEAN NOT NULL)''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+@login_manager.user_loader
+def load_user(user_id):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    user = c.fetchone()
+    conn.close()
+    if user:
+        return User(user[0], user[1], user[2], user[3])
+    return None
+
+# Login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user = c.fetchone()
+        conn.close()
+        if user and check_password_hash(user[2], password):
+            login_user(User(user[0], user[1], user[2], user[3]))
+            return redirect(url_for('index'))
+        flash('Invalid username or password')
+    return render_template('login.html')
+
+# Logout route
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+# Admin page
+@app.route('/admin', methods=['GET', 'POST'])
+@login_required
+def admin():
+    if not current_user.is_admin:
+        flash('You do not have permission to access this page.')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        action = request.form['action']
+        if action == 'add':
+            username = request.form['username']
+            password = request.form['password']
+            is_admin = 'is_admin' in request.form
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            try:
+                c.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)",
+                          (username, generate_password_hash(password), is_admin))
+                conn.commit()
+                flash('User added successfully')
+            except sqlite3.IntegrityError:
+                flash('Username already exists')
+            conn.close()
+        elif action == 'delete':
+            user_id = request.form['user_id']
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+            conn.commit()
+            conn.close()
+            flash('User deleted successfully')
+    
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT id, username, is_admin FROM users")
+    users = c.fetchall()
+    conn.close()
+    return render_template('admin.html', users=users)
 
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
     if request.method == 'POST':
         f = request.files.get('file')

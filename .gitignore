@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 settings.yaml
 .DS_Store
+users.db
