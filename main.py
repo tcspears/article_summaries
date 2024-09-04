@@ -13,9 +13,25 @@ import markdown
 import sqlite3
 import json
 import uuid
+from collections import OrderedDict
+
+class LimitedSizeDict(OrderedDict):
+    def __init__(self, *args, **kwds):
+        self.size_limit = kwds.pop("size_limit", None)
+        OrderedDict.__init__(self, *args, **kwds)
+        self._check_size_limit()
+
+    def __setitem__(self, key, value):
+        OrderedDict.__setitem__(self, key, value)
+        self._check_size_limit()
+
+    def _check_size_limit(self):
+        if self.size_limit is not None:
+            while len(self) > self.size_limit:
+                self.popitem(last=False)
 
 # Define paper_storage at the module level
-paper_storage = {}
+paper_storage = LimitedSizeDict(size_limit=100)  # Adjust size_limit as needed
 
 def load_config(app, config_file='settings.yaml'):
     with open(config_file, 'r') as file:
@@ -231,6 +247,10 @@ def chat():
     
     # Retrieve the full text using the paper_id
     full_text = paper_storage.get(paper_id, '')
+
+    # If the paper_id is not found, inform the user
+    if not full_text:
+        return jsonify({"response": "I'm sorry, but I can't find the paper you're referring to. It may have been removed from memory. Please upload the paper again."})
 
     # Start a new conversation each time
     conversation = [
