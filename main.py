@@ -1,5 +1,5 @@
 # Flask backend (app.py)
-from flask import Flask, jsonify, render_template, request, redirect, url_for, flash
+from flask import Flask, jsonify, render_template, request, redirect, url_for, flash, session
 from flask_dropzone import Dropzone
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,6 +11,11 @@ import yaml
 from markupsafe import escape, Markup
 import markdown
 import sqlite3
+import json
+import uuid
+
+# Define paper_storage at the module level
+paper_storage = {}
 
 def load_config(app, config_file='settings.yaml'):
     with open(config_file, 'r') as file:
@@ -136,7 +141,18 @@ def index():
             filename = secure_filename(f.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             f.save(file_path)
-            return process_pdf(file_path, model)
+            full_text, summaries = process_pdf(file_path, model)
+            
+            # Generate a unique ID for this paper
+            paper_id = str(uuid.uuid4())
+            
+            # Store the full text in the paper_storage dictionary
+            paper_storage[paper_id] = full_text
+            
+            # Store only the paper_id in the session
+            session['paper_id'] = paper_id
+            
+            return jsonify(summaries)
     return render_template('index.html')
 
 
@@ -144,17 +160,17 @@ def process_pdf(file_path, model):
     # Extract text from PDF
     with open(file_path, 'rb') as file:
         reader = PyPDF2.PdfReader(file)
-        text = ""
+        full_text = ""
         for page in reader.pages:
-            text += page.extract_text()
+            full_text += page.extract_text()
 
     # Generate all summaries using the new function with the specified model
-    summaries = generate_summaries(text, model)
+    summaries = generate_summaries(full_text, model)
 
     # Clean up: delete the uploaded file
     os.remove(file_path)
 
-    return jsonify(summaries)
+    return full_text, summaries
 
 
 def generate_summaries(text, model):
@@ -202,6 +218,35 @@ def format_summary(summary):
     # Wrap the entire summary in a div tag
     return Markup(f'<div class="summary-content">{html}</div>')
 
+
+@app.route('/chat', methods=['POST'])
+@login_required
+def chat():
+    data = request.json
+    user_message = data['message']
+    model = data['model']
+
+    # Retrieve the paper_id from the session
+    paper_id = session.get('paper_id')
+    
+    # Retrieve the full text using the paper_id
+    full_text = paper_storage.get(paper_id, '')
+
+    # Start a new conversation each time
+    conversation = [
+        {"role": "system", "content": "You are an AI assistant specialized in discussing academic papers. Use the provided full text of the paper to answer questions from the user."},
+        {"role": "user", "content": f"Here's the full text of the paper:\n\n{full_text}\n\nNow, please answer the following question: {user_message}"}
+    ]
+
+    # Call the OpenAI API
+    response = client.chat.completions.create(
+        model=model,
+        messages=conversation
+    )
+
+    ai_message = response.choices[0].message.content.strip()
+
+    return jsonify({"response": ai_message})
 
 if __name__ == '__main__':
     #app.run(debug=True)

@@ -30,6 +30,16 @@
         <div id="extendedSummary" class="summary"></div>
         <div id="methodsDiscussion" class="summary"></div>
         <div id="theoryDiscussion" class="summary"></div>
+
+        <!-- Chat interface -->
+        <div id="chatInterface" style="display: none;">
+            <h2>Chat with the PDF</h2>
+            <div id="chatMessages"></div>
+            <div id="chatInput">
+                <input type="text" id="userMessage" placeholder="Ask a question about the paper...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
     </div>
 
     {{ dropzone.load_js() }}
@@ -53,10 +63,63 @@
                     $('#methodsDiscussion').html(createSummaryHTML('Methods and Data', response.methods_discussion, 'methodsDiscussion'));
                     $('#theoryDiscussion').html(createSummaryHTML('Theoretical Framework and Contribution', response.theory_discussion, 'theoryDiscussion'));
                     
+                    // Show chat interface
+                    $('#chatInterface').show();
+                    $('#chatMessages').append(`<p><strong>AI:</strong> I have analyzed the full text of the paper. What would you like to know about it?</p>`);
+                    
                     this.removeAllFiles();
                 });
             }
         };
+
+        function sendMessage() {
+            const userMessage = $('#userMessage').val();
+            if (!userMessage) return;
+
+            // Add user message to chat
+            $('#chatMessages').append(`<p><strong>You:</strong> ${userMessage}</p>`);
+            $('#userMessage').val('');
+
+            // Add loading indicator
+            const loadingId = Date.now();
+            $('#chatMessages').append(`<p id="loading-${loadingId}"><strong>AI:</strong> Thinking...</p>`);
+
+            // Scroll to bottom of chat
+            $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+
+            // Send message to server
+            $.ajax({
+                url: '/chat',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    message: userMessage,
+                    model: $('#modelSelect').val()
+                }),
+                success: function(response) {
+                    // Remove loading indicator
+                    $(`#loading-${loadingId}`).remove();
+                    // Add AI response to chat
+                    $('#chatMessages').append(`<p><strong>AI:</strong> ${response.response}</p>`);
+                    // Scroll to bottom of chat
+                    $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+                },
+                error: function(error) {
+                    // Remove loading indicator
+                    $(`#loading-${loadingId}`).remove();
+                    console.error('Error:', error);
+                    $('#chatMessages').append(`<p><strong>Error:</strong> Failed to get response</p>`);
+                }
+            });
+        }
+
+        // Allow sending message with Enter key
+        $('#userMessage').keypress(function(e) {
+            if(e.which == 13) {
+                sendMessage();
+                return false;
+            }
+        });
 
         function copyToClipboard(elementId) {
             const element = document.getElementById(elementId);
