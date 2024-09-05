@@ -141,6 +141,14 @@ button:hover {
     right: 15px;
 }
 
+.filename {
+    font-size: 1.2em;
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 20px;
+    word-break: break-word;
+}
+
 @media (max-width: 600px) {
     .container {
         padding: 20px;
