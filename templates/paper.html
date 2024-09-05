@@ -10,7 +10,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Article Summary</h1>
+        <h1><a href="{{ url_for('index') }}">Article Summarizer</a></h1>
         <h2 class="filename">{{ filename }}</h2>
         <a href="{{ url_for('logout') }}">Logout</a>
         {% if current_user.is_admin %}
