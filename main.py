@@ -283,6 +283,25 @@ def chat(file_hash):
 
     return jsonify({"response": ai_message})
 
+@app.route('/clear_chat/<file_hash>', methods=['POST'])
+@login_required
+def clear_chat(file_hash):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT id FROM papers WHERE hash = ?", (file_hash,))
+    paper = c.fetchone()
+    
+    if not paper:
+        conn.close()
+        return jsonify({"success": False, "message": "Paper not found"})
+
+    paper_id = paper[0]
+    c.execute("DELETE FROM chats WHERE paper_id = ?", (paper_id,))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({"success": True})
+
 def process_pdf(file_path, model):
     # Extract text from PDF
     with open(file_path, 'rb') as file:

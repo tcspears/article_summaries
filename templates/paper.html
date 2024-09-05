@@ -42,7 +42,7 @@
         </div>
 
         <div id="chatInterface">
-            <h2>Chat with the PDF</h2>
+            <h2>Chat with the PDF <button id="clearChat" onclick="clearChat()">Clear Chat</button></h2>
             <div id="chatMessages">
                 {% for chat in chats %}
                     <p><strong>You:</strong> {{ chat[0] }}</p>
@@ -97,6 +97,24 @@
                 return false;
             }
         });
+
+        function clearChat() {
+            $.ajax({
+                url: '/clear_chat/{{ file_hash }}',
+                method: 'POST',
+                success: function(response) {
+                    if(response.success) {
+                        $('#chatMessages').empty();
+                    } else {
+                        alert('Failed to clear chat history');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error:', error);
+                    alert('Failed to clear chat history');
+                }
+            });
+        }
     </script>
 </body>
 </html>
