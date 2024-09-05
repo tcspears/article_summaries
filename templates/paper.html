@@ -32,22 +32,22 @@
         
         <div id="shortSummary" class="summary">
             <h2>Short Summary</h2>
-            {{ short_summary }}
+            <div class="summary-content">{{ short_summary }}</div>
             <button onclick="copySummary('shortSummary')" class="copy-btn">Copy</button>
         </div>
         <div id="extendedSummary" class="summary">
             <h2>Extended Summary</h2>
-            {{ extended_summary }}
+            <div class="summary-content">{{ extended_summary }}</div>
             <button onclick="copySummary('extendedSummary')" class="copy-btn">Copy</button>
         </div>
         <div id="methodsDiscussion" class="summary">
             <h2>Methods and Data</h2>
-            {{ methods_discussion }}
+            <div class="summary-content">{{ methods_discussion }}</div>
             <button onclick="copySummary('methodsDiscussion')" class="copy-btn">Copy</button>
         </div>
         <div id="theoryDiscussion" class="summary">
             <h2>Theoretical Framework and Contribution</h2>
-            {{ theory_discussion }}
+            <div class="summary-content">{{ theory_discussion }}</div>
             <button onclick="copySummary('theoryDiscussion')" class="copy-btn">Copy</button>
         </div>
 
@@ -135,12 +135,34 @@
         }
 
         function copySummary(id) {
-            const summaryText = document.getElementById(id).querySelector('.summary-content').innerText;
+            const summaryElement = document.getElementById(id);
+            const summaryText = summaryElement.innerText.replace('Copy', '').trim();
+            
             navigator.clipboard.writeText(summaryText).then(function() {
                 alert('Summary copied to clipboard!');
             }, function(err) {
                 console.error('Could not copy text: ', err);
+                fallbackCopyTextToClipboard(summaryText);
             });
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+                var msg = successful ? 'successful' : 'unsuccessful';
+                console.log('Fallback: Copying text command was ' + msg);
+                alert('Summary copied to clipboard!');
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+            }
+
+            document.body.removeChild(textArea);
         }
     </script>
 </body>
