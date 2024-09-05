@@ -14,6 +14,8 @@ import sqlite3
 import json
 import uuid
 from collections import OrderedDict
+import hashlib
+from datetime import datetime
 
 class LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
@@ -67,6 +69,23 @@ def init_db():
                   username TEXT UNIQUE NOT NULL,
                   password TEXT NOT NULL,
                   is_admin BOOLEAN NOT NULL)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS papers
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  hash TEXT UNIQUE NOT NULL,
+                  filename TEXT NOT NULL,
+                  full_text TEXT NOT NULL,
+                  short_summary TEXT NOT NULL,
+                  extended_summary TEXT NOT NULL,
+                  methods_discussion TEXT NOT NULL,
+                  theory_discussion TEXT NOT NULL,
+                  created_at DATETIME NOT NULL)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS chats
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  paper_id INTEGER NOT NULL,
+                  user_message TEXT NOT NULL,
+                  ai_response TEXT NOT NULL,
+                  created_at DATETIME NOT NULL,
+                  FOREIGN KEY (paper_id) REFERENCES papers (id))''')
     conn.commit()
     conn.close()
 
