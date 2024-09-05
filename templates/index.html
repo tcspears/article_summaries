@@ -24,7 +24,7 @@
             </select>
         </div>
         
-        {{ dropzone.create(action='') }}
+        {{ dropzone.create(action=url_for('index')) }}
         {{ dropzone.load_js() }}
         {{ dropzone.config(custom_options="success: function(file, response) { window.location.href = response; }") }}
     </div>
