@@ -171,25 +171,93 @@ def admin():
 def index():
     if request.method == 'POST':
         f = request.files.get('file')
-        model = request.form.get('model', 'gpt-4o-mini')  # Default to gpt-4o-mini if not specified
+        model = request.form.get('model', 'gpt-4o-mini')
         if f:
             filename = secure_filename(f.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             f.save(file_path)
+            
+            # Generate file hash
+            with open(file_path, 'rb') as file:
+                file_hash = hashlib.md5(file.read()).hexdigest()
+            
+            # Check if paper already exists
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute("SELECT * FROM papers WHERE hash = ?", (file_hash,))
+            existing_paper = c.fetchone()
+            
+            if existing_paper:
+                os.remove(file_path)  # Remove the uploaded file
+                return redirect(url_for('paper', file_hash=file_hash))
+            
             full_text, summaries = process_pdf(file_path, model)
             
-            # Generate a unique ID for this paper
-            paper_id = str(uuid.uuid4())
+            # Store paper in database
+            c.execute('''INSERT INTO papers (hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (file_hash, filename, full_text, summaries['short_summary'], summaries['extended_summary'],
+                       summaries['methods_discussion'], summaries['theory_discussion'], datetime.now()))
+            conn.commit()
+            conn.close()
             
-            # Store the full text in the paper_storage dictionary
-            paper_storage[paper_id] = full_text
-            
-            # Store only the paper_id in the session
-            session['paper_id'] = paper_id
-            
-            return jsonify(summaries)
+            os.remove(file_path)  # Remove the uploaded file
+            return redirect(url_for('paper', file_hash=file_hash))
     return render_template('index.html')
 
+@app.route('/paper/<file_hash>')
+@login_required
+def paper(file_hash):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM papers WHERE hash = ?", (file_hash,))
+    paper = c.fetchone()
+    
+    if not paper:
+        flash('Paper not found')
+        return redirect(url_for('index'))
+    
+    c.execute("SELECT user_message, ai_response FROM chats WHERE paper_id = ? ORDER BY created_at", (paper[0],))
+    chats = c.fetchall()
+    conn.close()
+    
+    return render_template('paper.html', paper=paper, chats=chats, file_hash=file_hash)
+
+@app.route('/chat/<file_hash>', methods=['POST'])
+@login_required
+def chat(file_hash):
+    data = request.json
+    user_message = data['message']
+    model = data['model']
+
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT id, full_text FROM papers WHERE hash = ?", (file_hash,))
+    paper = c.fetchone()
+    
+    if not paper:
+        return jsonify({"response": "Paper not found"})
+
+    paper_id, full_text = paper
+
+    conversation = [
+        {"role": "system", "content": "You are an AI assistant specialized in discussing academic papers. Use the provided full text of the paper to answer questions from the user."},
+        {"role": "user", "content": f"Here's the full text of the paper:\n\n{full_text}\n\nNow, please answer the following question: {user_message}"}
+    ]
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=conversation
+    )
+
+    ai_message = response.choices[0].message.content.strip()
+
+    c.execute('''INSERT INTO chats (paper_id, user_message, ai_response, created_at)
+                 VALUES (?, ?, ?, ?)''', (paper_id, user_message, ai_message, datetime.now()))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"response": ai_message})
 
 def process_pdf(file_path, model):
     # Extract text from PDF
@@ -253,39 +321,6 @@ def format_summary(summary):
     # Wrap the entire summary in a div tag
     return Markup(f'<div class="summary-content">{html}</div>')
 
-
-@app.route('/chat', methods=['POST'])
-@login_required
-def chat():
-    data = request.json
-    user_message = data['message']
-    model = data['model']
-
-    # Retrieve the paper_id from the session
-    paper_id = session.get('paper_id')
-    
-    # Retrieve the full text using the paper_id
-    full_text = paper_storage.get(paper_id, '')
-
-    # If the paper_id is not found, inform the user
-    if not full_text:
-        return jsonify({"response": "I'm sorry, but I can't find the paper you're referring to. It may have been removed from memory. Please upload the paper again."})
-
-    # Start a new conversation each time
-    conversation = [
-        {"role": "system", "content": "You are an AI assistant specialized in discussing academic papers. Use the provided full text of the paper to answer questions from the user."},
-        {"role": "user", "content": f"Here's the full text of the paper:\n\n{full_text}\n\nNow, please answer the following question: {user_message}"}
-    ]
-
-    # Call the OpenAI API
-    response = client.chat.completions.create(
-        model=model,
-        messages=conversation
-    )
-
-    ai_message = response.choices[0].message.content.strip()
-
-    return jsonify({"response": ai_message})
 
 if __name__ == '__main__':
     #app.run(debug=True)
