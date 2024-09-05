@@ -198,6 +198,9 @@ def index():
                 
                 full_text, summaries = process_pdf(file_path, model)
                 
+                # Debug: Print summaries before database insertion
+                print("Summaries to be inserted:", summaries)
+                
                 # Store paper in database
                 c.execute('''INSERT INTO papers (hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at)
                              VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
@@ -226,14 +229,22 @@ def paper(file_hash):
         flash('Paper not found')
         return redirect(url_for('index'))
     
+    # Debug: Print raw paper data
+    print("Raw paper data:", paper)
+    
     # Format summaries as HTML
     formatted_paper = list(paper)
     for i in range(4, 8):  # Indices 4-7 contain the summaries
         formatted_paper[i] = format_summary(paper[i])
+        # Debug: Print formatted summary
+        print(f"Formatted summary {i}:", formatted_paper[i])
     
     c.execute("SELECT user_message, ai_response FROM chats WHERE paper_id = ? ORDER BY created_at", (paper[0],))
     chats = c.fetchall()
     conn.close()
+    
+    # Debug: Print formatted paper data being sent to template
+    print("Formatted paper data:", formatted_paper)
     
     return render_template('paper.html', paper=formatted_paper, chats=chats, file_hash=file_hash)
 
@@ -323,6 +334,8 @@ def generate_summaries(text, model):
 
 
 def format_summary(summary):
+    if summary is None:
+        return Markup('<div class="summary-content">No summary available</div>')
     # Convert markdown to HTML
     html = markdown.markdown(summary)
     
