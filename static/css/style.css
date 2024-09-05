@@ -143,10 +143,38 @@ button:hover {
 
 .filename {
     font-size: 1.2em;
-    color: #666;
+    color: #4CAF50; /* Changed to green */
     margin-top: 0;
     margin-bottom: 20px;
     word-break: break-word;
+}
+
+.permalink {
+    margin-bottom: 30px;
+}
+
+.permalink input[type="text"] {
+    width: calc(100% - 70px);
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--summary-bg);
+    color: var(--text-color);
+}
+
+.permalink .copy-btn {
+    padding: 10px 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.permalink .copy-btn:hover {
+    background-color: var(--hover-color);
 }
 
 @media (max-width: 600px) {

@@ -12,6 +12,11 @@
     <div class="container">
         <h1><a href="{{ url_for('index') }}">Article Summarizer</a></h1>
         <h2 class="filename">{{ filename }}</h2>
+        <div class="permalink summary">
+            <h2>Permalink</h2>
+            <input type="text" id="permalinkInput" value="{{ request.url }}" readonly>
+            <button onclick="copyPermalink()" class="copy-btn">Copy</button>
+        </div>
         <a href="{{ url_for('logout') }}">Logout</a>
         {% if current_user.is_admin %}
             <a href="{{ url_for('admin') }}">Admin Panel</a>
@@ -114,6 +119,14 @@
                     alert('Failed to clear chat history');
                 }
             });
+        }
+
+        function copyPermalink() {
+            var permalinkInput = document.getElementById("permalinkInput");
+            permalinkInput.select();
+            permalinkInput.setSelectionRange(0, 99999); // For mobile devices
+            document.execCommand("copy");
+            alert("Permalink copied to clipboard!");
         }
     </script>
 </body>
