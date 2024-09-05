@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Paper Analysis: {{ paper[2] }}</h1>
+        <a href="{{ url_for('logout') }}">Logout</a>
+        {% if current_user.is_admin %}
+            <a href="{{ url_for('admin') }}">Admin Panel</a>
+        {% endif %}
+        
+        <div class="model-select-container">
+            <select id="modelSelect">
+                <option value="gpt-4o-mini">GPT-4o-mini</option>
+                <option value="gpt-4o">GPT-4o</option>
+            </select>
+        </div>
+
+        <div id="shortSummary" class="summary">
+            <h2>Short Summary</h2>
+            <div class="summary-content">{{ paper[4] }}</div>
+        </div>
+        <div id="extendedSummary" class="summary">
+            <h2>Extended Summary</h2>
+            <div class="summary-content">{{ paper[5] }}</div>
+        </div>
+        <div id="methodsDiscussion" class="summary">
+            <h2>Methods and Data</h2>
+            <div class="summary-content">{{ paper[6] }}</div>
+        </div>
+        <div id="theoryDiscussion" class="summary">
+            <h2>Theoretical Framework and Contribution</h2>
+            <div class="summary-content">{{ paper[7] }}</div>
+        </div>
+
+        <div id="chatInterface">
+            <h2>Chat with the PDF</h2>
+            <div id="chatMessages">
+                {% for chat in chats %}
+                    <p><strong>You:</strong> {{ chat[0] }}</p>
+                    <p><strong>AI:</strong> {{ chat[1] }}</p>
+                {% endfor %}
+            </div>
+            <div id="chatInput">
+                <input type="text" id="userMessage" placeholder="Ask a question about the paper...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        function sendMessage() {
+            const userMessage = $('#userMessage').val();
+            if (!userMessage) return;
+
+            $('#chatMessages').append(`<p><strong>You:</strong> ${userMessage}</p>`);
+            $('#userMessage').val('');
+
+            const loadingId = Date.now();
+            $('#chatMessages').append(`<p id="loading-${loadingId}"><strong>AI:</strong> Thinking...</p>`);
+
+            $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+
+            $.ajax({
+                url: '/chat/{{ file_hash }}',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    message: userMessage,
+                    model: $('#modelSelect').val()
+                }),
+                success: function(response) {
+                    $(`#loading-${loadingId}`).remove();
+                    $('#chatMessages').append(`<p><strong>AI:</strong> ${response.response}</p>`);
+                    $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+                },
+                error: function(error) {
+                    $(`#loading-${loadingId}`).remove();
+                    console.error('Error:', error);
+                    $('#chatMessages').append(`<p><strong>Error:</strong> Failed to get response</p>`);
+                }
+            });
+        }
+
+        $('#userMessage').keypress(function(e) {
+            if(e.which == 13) {
+                sendMessage();
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>
