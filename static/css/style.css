@@ -153,10 +153,16 @@ button:hover {
     margin-bottom: 30px;
 }
 
+.permalink h2 {
+    margin-top: 10px;  /* Reduced top margin */
+    margin-bottom: 10px;  /* Reduced bottom margin */
+}
+
 .permalink input[type="text"] {
     width: calc(100% - 70px);
     padding: 10px;
     margin-right: 10px;
+    margin-bottom: 10px;  /* Reduced bottom margin */
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background-color: var(--summary-bg);
@@ -232,4 +238,10 @@ button:hover {
 
 .container input[type="submit"][value="Delete All Articles and Chats"]:hover {
     background-color: #d32f2f;
+}
+
+/* Style for disabled select */
+select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }

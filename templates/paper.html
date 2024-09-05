@@ -12,23 +12,24 @@
     <div class="container">
         <h1><a href="{{ url_for('index') }}">Article Summarizer</a></h1>
         <h2 class="filename">{{ filename }}</h2>
-        <div class="permalink summary">
-            <h2>Permalink</h2>
-            <input type="text" id="permalinkInput" value="{{ request.url }}" readonly>
-            <button onclick="copyPermalink()" class="copy-btn">Copy</button>
-        </div>
         <a href="{{ url_for('logout') }}">Logout</a>
         {% if current_user.is_admin %}
             <a href="{{ url_for('admin') }}">Admin Panel</a>
         {% endif %}
         
         <div class="model-select-container">
-            <select id="modelSelect">
-                <option value="gpt-4o-mini">GPT-4o-mini</option>
-                <option value="gpt-4o">GPT-4o</option>
+            <select id="modelSelect" disabled>
+                <option value="gpt-4o-mini" {% if model == 'gpt-4o-mini' %}selected{% endif %}>GPT-4o-mini</option>
+                <option value="gpt-4o" {% if model == 'gpt-4o' %}selected{% endif %}>GPT-4o</option>
             </select>
         </div>
 
+        <div class="permalink summary">
+            <h2>Permalink</h2>
+            <input type="text" id="permalinkInput" value="{{ request.url }}" readonly>
+            <button onclick="copyPermalink()" class="copy-btn">Copy</button>
+        </div>
+        
         <div id="shortSummary" class="summary">
             <h2>Short Summary</h2>
             {{ short_summary }}

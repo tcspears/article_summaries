@@ -69,11 +69,14 @@ class User(UserMixin):
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
+    
+    # Create tables if they don't exist
     c.execute('''CREATE TABLE IF NOT EXISTS users
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   username TEXT UNIQUE NOT NULL,
                   password TEXT NOT NULL,
                   is_admin BOOLEAN NOT NULL)''')
+    
     c.execute('''CREATE TABLE IF NOT EXISTS papers
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   hash TEXT UNIQUE NOT NULL,
@@ -84,6 +87,7 @@ def init_db():
                   methods_discussion TEXT NOT NULL,
                   theory_discussion TEXT NOT NULL,
                   created_at DATETIME NOT NULL)''')
+    
     c.execute('''CREATE TABLE IF NOT EXISTS chats
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   paper_id INTEGER NOT NULL,
@@ -91,9 +95,19 @@ def init_db():
                   ai_response TEXT NOT NULL,
                   created_at DATETIME NOT NULL,
                   FOREIGN KEY (paper_id) REFERENCES papers (id))''')
+    
+    # Check if 'model' column exists in papers table
+    c.execute("PRAGMA table_info(papers)")
+    columns = [column[1] for column in c.fetchall()]
+    
+    # Add 'model' column if it doesn't exist
+    if 'model' not in columns:
+        c.execute("ALTER TABLE papers ADD COLUMN model TEXT")
+    
     conn.commit()
     conn.close()
 
+# Call init_db() at the start of your application
 init_db()
 
 @login_manager.user_loader
@@ -223,10 +237,10 @@ def index():
                 full_text, summaries = process_pdf(file_path, model)
                 
                 # Store paper in database
-                c.execute('''INSERT INTO papers (hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at)
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                c.execute('''INSERT INTO papers (hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at, model)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                           (file_hash, filename, full_text, summaries['short_summary'], summaries['extended_summary'],
-                           summaries['methods_discussion'], summaries['theory_discussion'], datetime.now()))
+                           summaries['methods_discussion'], summaries['theory_discussion'], datetime.now(), model))
                 conn.commit()
                 conn.close()
                 
@@ -252,7 +266,7 @@ def paper(file_hash):
         return redirect(url_for('index'))
     
     # Extract individual fields
-    paper_id, file_hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at = paper
+    paper_id, file_hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at, model = paper
     
     c.execute("SELECT user_message, ai_response FROM chats WHERE paper_id = ? ORDER BY created_at", (paper_id,))
     chats = c.fetchall()
@@ -268,7 +282,8 @@ def paper(file_hash):
                            methods_discussion=Markup(methods_discussion),
                            theory_discussion=Markup(theory_discussion),
                            chats=chats, 
-                           file_hash=file_hash)
+                           file_hash=file_hash,
+                           model=model)  # Add this line
 
 @app.route('/chat/<file_hash>', methods=['POST'])
 @login_required
