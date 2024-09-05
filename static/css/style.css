@@ -139,6 +139,8 @@ button:hover {
     position: absolute;
     top: 15px;
     right: 15px;
+    padding: 5px 10px;
+    font-size: 0.9em;
 }
 
 .filename {

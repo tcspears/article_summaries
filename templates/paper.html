@@ -33,18 +33,22 @@
         <div id="shortSummary" class="summary">
             <h2>Short Summary</h2>
             {{ short_summary }}
+            <button onclick="copySummary('shortSummary')" class="copy-btn">Copy</button>
         </div>
         <div id="extendedSummary" class="summary">
             <h2>Extended Summary</h2>
             {{ extended_summary }}
+            <button onclick="copySummary('extendedSummary')" class="copy-btn">Copy</button>
         </div>
         <div id="methodsDiscussion" class="summary">
             <h2>Methods and Data</h2>
             {{ methods_discussion }}
+            <button onclick="copySummary('methodsDiscussion')" class="copy-btn">Copy</button>
         </div>
         <div id="theoryDiscussion" class="summary">
             <h2>Theoretical Framework and Contribution</h2>
             {{ theory_discussion }}
+            <button onclick="copySummary('theoryDiscussion')" class="copy-btn">Copy</button>
         </div>
 
         <div id="chatInterface">
@@ -128,6 +132,15 @@
             permalinkInput.setSelectionRange(0, 99999); // For mobile devices
             document.execCommand("copy");
             alert("Permalink copied to clipboard!");
+        }
+
+        function copySummary(id) {
+            const summaryText = document.getElementById(id).querySelector('.summary-content').innerText;
+            navigator.clipboard.writeText(summaryText).then(function() {
+                alert('Summary copied to clipboard!');
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
         }
     </script>
 </body>
