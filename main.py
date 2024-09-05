@@ -163,6 +163,29 @@ def admin():
             conn.commit()
             conn.close()
             flash('User deleted successfully')
+        elif action == 'delete_all_articles':
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute("DELETE FROM chats")
+            c.execute("DELETE FROM papers")
+            conn.commit()
+            conn.close()
+            flash('All articles and chats have been deleted.')
+        elif action == 'delete_specific_article':
+            paper_hash = request.form['paper_hash']
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute("SELECT id FROM papers WHERE hash = ?", (paper_hash,))
+            paper = c.fetchone()
+            if paper:
+                paper_id = paper[0]
+                c.execute("DELETE FROM chats WHERE paper_id = ?", (paper_id,))
+                c.execute("DELETE FROM papers WHERE id = ?", (paper_id,))
+                conn.commit()
+                flash('Article and associated chats have been deleted.')
+            else:
+                flash('Article not found.')
+            conn.close()
     
     conn = sqlite3.connect('users.db')
     c = conn.cursor()

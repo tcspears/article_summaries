@@ -47,6 +47,20 @@
             </tr>
             {% endfor %}
         </table>
+        
+        <h2>Article Management</h2>
+        <form method="POST" onsubmit="return confirm('Are you sure you want to delete all articles and chats? This action cannot be undone.');">
+            <input type="hidden" name="action" value="delete_all_articles">
+            <input type="submit" value="Delete All Articles and Chats">
+        </form>
+        
+        <h2>Delete Specific Article</h2>
+        <form method="POST">
+            <input type="hidden" name="action" value="delete_specific_article">
+            <label for="paper_hash">Paper Hash:</label>
+            <input type="text" id="paper_hash" name="paper_hash" required>
+            <input type="submit" value="Delete Article and Chats">
+        </form>
     </div>
 </body>
 </html>
