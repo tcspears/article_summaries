@@ -26,7 +26,7 @@
         
         {{ dropzone.create(action=url_for('index')) }}
         {{ dropzone.load_js() }}
-        {{ dropzone.config(custom_options="success: function(file, response) { window.location.href = response; }") }}
+        {{ dropzone.config(custom_options="success: function(file, response) { if(response.redirect) { window.location.href = response.redirect; } }") }}
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -36,6 +36,11 @@
                 this.on("sending", function(file, xhr, formData) {
                     formData.append("model", $("#modelSelect").val());
                 });
+            },
+            success: function(file, response) {
+                if (response.redirect) {
+                    window.location.href = response.redirect;
+                }
             }
         };
     </script>

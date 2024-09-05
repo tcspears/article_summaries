@@ -194,7 +194,8 @@ def index():
                 existing_paper = c.fetchone()
                 
                 if existing_paper:
-                    return redirect(url_for('paper', file_hash=file_hash))
+                    print(f"Paper already exists. Redirecting to: {url_for('paper', file_hash=file_hash)}")
+                    return jsonify({'redirect': url_for('paper', file_hash=file_hash)})
                 
                 full_text, summaries = process_pdf(file_path, model)
                 
@@ -206,7 +207,8 @@ def index():
                 conn.commit()
                 conn.close()
                 
-                return redirect(url_for('paper', file_hash=file_hash))
+                print(f"New paper processed. Redirecting to: {url_for('paper', file_hash=file_hash)}")
+                return jsonify({'redirect': url_for('paper', file_hash=file_hash)})
             finally:
                 # Ensure the file is removed even if an error occurs
                 if os.path.exists(file_path):
@@ -232,6 +234,9 @@ def paper(file_hash):
     c.execute("SELECT user_message, ai_response FROM chats WHERE paper_id = ? ORDER BY created_at", (paper_id,))
     chats = c.fetchall()
     conn.close()
+    
+    print(f"Rendering paper page for file: {filename}")
+    print(f"Short summary: {short_summary[:100]}...")  # Print first 100 characters of short summary
     
     return render_template('paper.html', 
                            filename=filename,
