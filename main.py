@@ -86,7 +86,8 @@ def init_db():
                   extended_summary TEXT NOT NULL,
                   methods_discussion TEXT NOT NULL,
                   theory_discussion TEXT NOT NULL,
-                  created_at DATETIME NOT NULL)''')
+                  created_at DATETIME NOT NULL,
+                  model TEXT NOT NULL)''')
     
     c.execute('''CREATE TABLE IF NOT EXISTS chats
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -277,13 +278,13 @@ def paper(file_hash):
     
     return render_template('paper.html', 
                            filename=filename,
-                           short_summary=Markup(short_summary),
-                           extended_summary=Markup(extended_summary),
-                           methods_discussion=Markup(methods_discussion),
-                           theory_discussion=Markup(theory_discussion),
+                           short_summary=short_summary,
+                           extended_summary=extended_summary,
+                           methods_discussion=methods_discussion,
+                           theory_discussion=theory_discussion,
                            chats=chats, 
                            file_hash=file_hash,
-                           model=model)  # Add this line
+                           model=model)
 
 @app.route('/chat/<file_hash>', methods=['POST'])
 @login_required
@@ -386,20 +387,7 @@ def generate_summaries(text, model):
     # Theory discussion
     summaries['theory_discussion'] = get_summary("Finally, provide a 200 word discussion of the theoretical framework and contribution of this paper. Highlight aspects not already covered in previous summaries and discussions. If you've touched on theoretical points before, expand on them without repeating the same information.")
 
-    return summaries  # Return the summaries without HTML formatting
-
-
-def format_summary(summary):
-    if summary is None:
-        return Markup('<div class="summary-content">No summary available</div>')
-    # Convert markdown to HTML
-    html = markdown.markdown(summary)
-    
-    # Remove any potential extra newlines between tags
-    html = html.replace('>\n<', '><')
-    
-    # Wrap the entire summary in a div tag
-    return Markup(f'<div class="summary-content">{html}</div>')
+    return summaries
 
 
 if __name__ == '__main__':

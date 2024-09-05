@@ -30,26 +30,10 @@
             <button onclick="copyPermalink()" class="copy-btn">Copy</button>
         </div>
         
-        <div id="shortSummary" class="summary">
-            <h2>Short Summary</h2>
-            <div class="summary-content">{{ short_summary }}</div>
-            <button onclick="copySummary('shortSummary')" class="copy-btn">Copy</button>
-        </div>
-        <div id="extendedSummary" class="summary">
-            <h2>Extended Summary</h2>
-            <div class="summary-content">{{ extended_summary }}</div>
-            <button onclick="copySummary('extendedSummary')" class="copy-btn">Copy</button>
-        </div>
-        <div id="methodsDiscussion" class="summary">
-            <h2>Methods and Data</h2>
-            <div class="summary-content">{{ methods_discussion }}</div>
-            <button onclick="copySummary('methodsDiscussion')" class="copy-btn">Copy</button>
-        </div>
-        <div id="theoryDiscussion" class="summary">
-            <h2>Theoretical Framework and Contribution</h2>
-            <div class="summary-content">{{ theory_discussion }}</div>
-            <button onclick="copySummary('theoryDiscussion')" class="copy-btn">Copy</button>
-        </div>
+        <div id="shortSummary" class="summary"></div>
+        <div id="extendedSummary" class="summary"></div>
+        <div id="methodsDiscussion" class="summary"></div>
+        <div id="theoryDiscussion" class="summary"></div>
 
         <div id="chatInterface">
             <h2>Chat with the PDF <button id="clearChat" onclick="clearChat()">Clear Chat</button></h2>
@@ -68,6 +52,42 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
+        function createSummaryHTML(title, content, id) {
+            return `<h2>${title}</h2>
+                    <div class="summary-content">${content}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('${id}')">Copy</button>`;
+        }
+
+        // Populate summaries on page load
+        $(document).ready(function() {
+            $('#shortSummary').html(createSummaryHTML('Short Summary', {{ short_summary|tojson|safe }}, 'shortSummary'));
+            $('#extendedSummary').html(createSummaryHTML('Extended Summary', {{ extended_summary|tojson|safe }}, 'extendedSummary'));
+            $('#methodsDiscussion').html(createSummaryHTML('Methods and Data', {{ methods_discussion|tojson|safe }}, 'methodsDiscussion'));
+            $('#theoryDiscussion').html(createSummaryHTML('Theoretical Framework and Contribution', {{ theory_discussion|tojson|safe }}, 'theoryDiscussion'));
+        });
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const content = element.querySelector('.summary-content').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                const copyBtn = element.querySelector('.copy-btn');
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        function copyPermalink() {
+            var permalinkInput = document.getElementById("permalinkInput");
+            permalinkInput.select();
+            permalinkInput.setSelectionRange(0, 99999); // For mobile devices
+            document.execCommand("copy");
+            alert("Permalink copied to clipboard!");
+        }
+
         function sendMessage() {
             const userMessage = $('#userMessage').val();
             if (!userMessage) return;
@@ -123,26 +143,6 @@
                     console.error('Error:', error);
                     alert('Failed to clear chat history');
                 }
-            });
-        }
-
-        function copyPermalink() {
-            var permalinkInput = document.getElementById("permalinkInput");
-            permalinkInput.select();
-            permalinkInput.setSelectionRange(0, 99999); // For mobile devices
-            document.execCommand("copy");
-            alert("Permalink copied to clipboard!");
-        }
-
-        function copySummary(id) {
-            const summaryElement = document.getElementById(id);
-            const summaryText = summaryElement.innerText.replace('Copy', '').trim();
-            
-            navigator.clipboard.writeText(summaryText).then(function() {
-                alert('Summary copied to clipboard!');
-            }, function(err) {
-                console.error('Could not copy text: ', err);
-                fallbackCopyTextToClipboard(summaryText);
             });
         }
 
