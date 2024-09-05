@@ -17,6 +17,11 @@ from collections import OrderedDict
 import hashlib
 from datetime import datetime
 
+def adapt_datetime(ts):
+    return ts.isoformat()
+
+sqlite3.register_adapter(datetime, adapt_datetime)
+
 class LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
         self.size_limit = kwds.pop("size_limit", None)
@@ -177,32 +182,36 @@ def index():
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             f.save(file_path)
             
-            # Generate file hash
-            with open(file_path, 'rb') as file:
-                file_hash = hashlib.md5(file.read()).hexdigest()
-            
-            # Check if paper already exists
-            conn = sqlite3.connect('users.db')
-            c = conn.cursor()
-            c.execute("SELECT * FROM papers WHERE hash = ?", (file_hash,))
-            existing_paper = c.fetchone()
-            
-            if existing_paper:
-                os.remove(file_path)  # Remove the uploaded file
+            try:
+                # Generate file hash
+                with open(file_path, 'rb') as file:
+                    file_hash = hashlib.md5(file.read()).hexdigest()
+                
+                # Check if paper already exists
+                conn = sqlite3.connect('users.db')
+                c = conn.cursor()
+                c.execute("SELECT * FROM papers WHERE hash = ?", (file_hash,))
+                existing_paper = c.fetchone()
+                
+                if existing_paper:
+                    return redirect(url_for('paper', file_hash=file_hash))
+                
+                full_text, summaries = process_pdf(file_path, model)
+                
+                # Store paper in database
+                c.execute('''INSERT INTO papers (hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                          (file_hash, filename, full_text, summaries['short_summary'], summaries['extended_summary'],
+                           summaries['methods_discussion'], summaries['theory_discussion'], datetime.now()))
+                conn.commit()
+                conn.close()
+                
                 return redirect(url_for('paper', file_hash=file_hash))
-            
-            full_text, summaries = process_pdf(file_path, model)
-            
-            # Store paper in database
-            c.execute('''INSERT INTO papers (hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (file_hash, filename, full_text, summaries['short_summary'], summaries['extended_summary'],
-                       summaries['methods_discussion'], summaries['theory_discussion'], datetime.now()))
-            conn.commit()
-            conn.close()
-            
-            os.remove(file_path)  # Remove the uploaded file
-            return redirect(url_for('paper', file_hash=file_hash))
+            finally:
+                # Ensure the file is removed even if an error occurs
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+    
     return render_template('index.html')
 
 @app.route('/paper/<file_hash>')
@@ -269,9 +278,6 @@ def process_pdf(file_path, model):
 
     # Generate all summaries using the new function with the specified model
     summaries = generate_summaries(full_text, model)
-
-    # Clean up: delete the uploaded file
-    os.remove(file_path)
 
     return full_text, summaries
 
