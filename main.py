@@ -198,9 +198,6 @@ def index():
                 
                 full_text, summaries = process_pdf(file_path, model)
                 
-                # Debug: Print summaries before database insertion
-                print("Summaries to be inserted:", summaries)
-                
                 # Store paper in database
                 c.execute('''INSERT INTO papers (hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at)
                              VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
@@ -229,24 +226,21 @@ def paper(file_hash):
         flash('Paper not found')
         return redirect(url_for('index'))
     
-    # Debug: Print raw paper data
-    print("Raw paper data:", paper)
+    # Extract individual fields
+    paper_id, file_hash, filename, full_text, short_summary, extended_summary, methods_discussion, theory_discussion, created_at = paper
     
-    # Format summaries as HTML
-    formatted_paper = list(paper)
-    for i in range(4, 8):  # Indices 4-7 contain the summaries
-        formatted_paper[i] = format_summary(paper[i])
-        # Debug: Print formatted summary
-        print(f"Formatted summary {i}:", formatted_paper[i])
-    
-    c.execute("SELECT user_message, ai_response FROM chats WHERE paper_id = ? ORDER BY created_at", (paper[0],))
+    c.execute("SELECT user_message, ai_response FROM chats WHERE paper_id = ? ORDER BY created_at", (paper_id,))
     chats = c.fetchall()
     conn.close()
     
-    # Debug: Print formatted paper data being sent to template
-    print("Formatted paper data:", formatted_paper)
-    
-    return render_template('paper.html', paper=formatted_paper, chats=chats, file_hash=file_hash)
+    return render_template('paper.html', 
+                           filename=filename,
+                           short_summary=Markup(short_summary),
+                           extended_summary=Markup(extended_summary),
+                           methods_discussion=Markup(methods_discussion),
+                           theory_discussion=Markup(theory_discussion),
+                           chats=chats, 
+                           file_hash=file_hash)
 
 @app.route('/chat/<file_hash>', methods=['POST'])
 @login_required
