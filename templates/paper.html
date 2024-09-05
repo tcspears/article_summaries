@@ -25,19 +25,19 @@
 
         <div id="shortSummary" class="summary">
             <h2>Short Summary</h2>
-            <div class="summary-content">{{ paper[4] }}</div>
+            {{ paper[4]|safe }}
         </div>
         <div id="extendedSummary" class="summary">
             <h2>Extended Summary</h2>
-            <div class="summary-content">{{ paper[5] }}</div>
+            {{ paper[5]|safe }}
         </div>
         <div id="methodsDiscussion" class="summary">
             <h2>Methods and Data</h2>
-            <div class="summary-content">{{ paper[6] }}</div>
+            {{ paper[6]|safe }}
         </div>
         <div id="theoryDiscussion" class="summary">
             <h2>Theoretical Framework and Contribution</h2>
-            <div class="summary-content">{{ paper[7] }}</div>
+            {{ paper[7]|safe }}
         </div>
 
         <div id="chatInterface">

@@ -226,11 +226,16 @@ def paper(file_hash):
         flash('Paper not found')
         return redirect(url_for('index'))
     
+    # Format summaries as HTML
+    formatted_paper = list(paper)
+    for i in range(4, 8):  # Indices 4-7 contain the summaries
+        formatted_paper[i] = format_summary(paper[i])
+    
     c.execute("SELECT user_message, ai_response FROM chats WHERE paper_id = ? ORDER BY created_at", (paper[0],))
     chats = c.fetchall()
     conn.close()
     
-    return render_template('paper.html', paper=paper, chats=chats, file_hash=file_hash)
+    return render_template('paper.html', paper=formatted_paper, chats=chats, file_hash=file_hash)
 
 @app.route('/chat/<file_hash>', methods=['POST'])
 @login_required
@@ -314,7 +319,7 @@ def generate_summaries(text, model):
     # Theory discussion
     summaries['theory_discussion'] = get_summary("Finally, provide a 200 word discussion of the theoretical framework and contribution of this paper. Highlight aspects not already covered in previous summaries and discussions. If you've touched on theoretical points before, expand on them without repeating the same information.")
 
-    return {key: format_summary(value) for key, value in summaries.items()}
+    return summaries  # Return the summaries without HTML formatting
 
 
 def format_summary(summary):
