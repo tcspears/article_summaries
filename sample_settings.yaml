@@ -3,3 +3,6 @@ UPLOAD_FOLDER: 'uploads'
 
 # OpenAI configuration
 OPENAI_API_KEY: # Your OpenAI API key goes here, e.g. 'sk-proj-uidazio...'
+
+# Flask configuration
+SECRET_KEY: # Choose a Flask secret key
