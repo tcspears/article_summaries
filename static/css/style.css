@@ -258,3 +258,22 @@ select:disabled {
     border-radius: 4px; /* Rounded corners */
     margin-bottom: 10px; /* Space between text and button */
 }
+
+.full-text .collapsible {
+    cursor: pointer; /* Change cursor to pointer to indicate it's clickable */
+    color: var(--primary-color); /* Use primary color for the header */
+    margin: 0; /* Remove default margin */
+    padding: 5px; /* Reduced padding for a smaller clickable area */
+    border: 1px solid var(--border-color); /* Add border for better visibility */
+    border-radius: 4px; /* Rounded corners */
+    background-color: var(--summary-bg); /* Background color */
+    transition: background-color 0.3s ease; /* Smooth background transition */
+}
+
+.full-text .collapsible:hover {
+    background-color: var(--hover-color); /* Change background on hover */
+}
+
+.summary-content .copy-btn {
+    margin-top: 10px; /* Add space above the button */
+}

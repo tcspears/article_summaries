@@ -35,11 +35,11 @@
 
         <!-- New Full Text Section -->
         <div class="full-text summary">
-            <h2>Full Text</h2>
-            <div class="summary-content" id="fullTextContent">
+            <h2 class="collapsible" id="fullTextHeader" onclick="toggleFullText()">Full Text</h2>
+            <div class="summary-content" id="fullTextContent" style="display: none;">
                 {{ full_text }}
+                <button class="copy-btn" onclick="copyFullText()" style="margin-top: 10px;">Copy</button>
             </div>
-            <button class="copy-btn" onclick="copyFullText()">Copy Full Text</button>
         </div>
         
         <div id="shortSummary" class="summary"></div>
@@ -231,6 +231,16 @@
         function checkEnter(event) {
             if (event.key === 'Enter') {
                 saveFilename();
+            }
+        }
+    </script>
+    <script>
+        function toggleFullText() {
+            const fullTextContent = document.getElementById('fullTextContent');
+            if (fullTextContent.style.display === 'none') {
+                fullTextContent.style.display = 'block'; // Show the full text
+            } else {
+                fullTextContent.style.display = 'none'; // Hide the full text
             }
         }
     </script>
