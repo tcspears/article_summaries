@@ -278,6 +278,7 @@ def paper(file_hash):
     
     return render_template('paper.html', 
                            filename=filename,
+                           full_text=full_text,  # Add this line
                            short_summary=short_summary,
                            extended_summary=extended_summary,
                            methods_discussion=methods_discussion,

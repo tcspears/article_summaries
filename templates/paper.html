@@ -29,6 +29,15 @@
             <input type="text" id="permalinkInput" value="{{ request.url }}" readonly>
             <button onclick="copyPermalink()" class="copy-btn">Copy</button>
         </div>
+
+        <!-- New Full Text Section -->
+        <div class="full-text summary">
+            <h2>Full Text</h2>
+            <div class="summary-content" id="fullTextContent">
+                {{ full_text }}
+            </div>
+            <button class="copy-btn" onclick="copyFullText()">Copy Full Text</button>
+        </div>
         
         <div id="shortSummary" class="summary"></div>
         <div id="extendedSummary" class="summary"></div>
@@ -77,6 +86,15 @@
                 }, 2000);
             }).catch(err => {
                 console.error('Failed to copy text: ', err);
+            });
+        }
+
+        function copyFullText() {
+            const fullTextContent = document.getElementById('fullTextContent').innerText;
+            navigator.clipboard.writeText(fullTextContent).then(() => {
+                alert('Full text copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy full text: ', err);
             });
         }
 

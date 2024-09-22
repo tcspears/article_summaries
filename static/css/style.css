@@ -247,3 +247,14 @@ select:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+.full-text .summary-content {
+    max-height: 150px; /* Adjust height as needed */
+    overflow-y: auto; /* Enable vertical scrolling */
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    background-color: var(--summary-bg);
+    color: var(--text-color);
+    border-radius: 4px; /* Rounded corners */
+    margin-bottom: 10px; /* Space between text and button */
+}
