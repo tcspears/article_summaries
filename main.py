@@ -390,6 +390,19 @@ def generate_summaries(text, model):
 
     return summaries
 
+@app.route('/update_filename/<file_hash>', methods=['POST'])
+@login_required
+def update_filename(file_hash):
+    data = request.json
+    new_filename = data['filename']
+
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("UPDATE papers SET filename = ? WHERE hash = ?", (new_filename, file_hash))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"success": True})
 
 if __name__ == '__main__':
     #app.run(debug=True)

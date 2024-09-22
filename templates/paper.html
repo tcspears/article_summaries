@@ -11,7 +11,10 @@
 <body>
     <div class="container">
         <h1><a href="{{ url_for('index') }}">Article Summarizer</a></h1>
-        <h2 class="filename">{{ filename }}</h2>
+        <div class="filename-container">
+            <h2 class="filename" id="filenameDisplay" onclick="editFilename()">{{ filename }}</h2>
+            <input type="text" id="filenameInput" value="{{ filename }}" style="display:none;" onblur="saveFilename()" onkeypress="checkEnter(event)">
+        </div>
         <a href="{{ url_for('logout') }}">Logout</a>
         {% if current_user.is_admin %}
             <a href="{{ url_for('admin') }}">Admin Panel</a>
@@ -181,6 +184,54 @@
             }
 
             document.body.removeChild(textArea);
+        }
+    </script>
+    <script>
+        function editFilename() {
+            const filenameDisplay = document.getElementById('filenameDisplay');
+            const filenameInput = document.getElementById('filenameInput');
+            
+            filenameDisplay.style.display = 'none'; // Hide the display
+            filenameInput.style.display = 'block'; // Show the input field
+            filenameInput.focus(); // Focus on the input field
+            filenameInput.select(); // Select the text for easy editing
+        }
+
+        function saveFilename() {
+            const filenameInput = document.getElementById('filenameInput');
+            const newFilename = filenameInput.value;
+
+            // Hide the input field and show the display again
+            filenameInput.style.display = 'none';
+            document.getElementById('filenameDisplay').style.display = 'block';
+
+            // Update the filename in the database
+            if (newFilename !== '') {
+                fetch(`/update_filename/{{ file_hash }}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filename: newFilename }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('filenameDisplay').innerText = newFilename; // Update the displayed filename
+                    } else {
+                        alert('Failed to update filename.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function checkEnter(event) {
+            if (event.key === 'Enter') {
+                saveFilename();
+            }
         }
     </script>
 </body>
